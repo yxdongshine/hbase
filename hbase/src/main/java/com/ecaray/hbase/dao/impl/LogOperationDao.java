@@ -1,0 +1,163 @@
+package com.ecaray.hbase.dao.impl;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellUtil;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Delete;
+import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.HConnection;
+import org.apache.hadoop.hbase.client.HTableInterface;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
+
+import com.ecaray.bean.ColFamilyInfo;
+import com.ecaray.bean.ColInfo;
+import com.ecaray.bean.LogInfo;
+import com.ecaray.bean.RowInfo;
+import com.ecaray.connect.ConnectPool;
+import com.ecaray.constant.Constant;
+import com.ecaray.hbase.dao.DDLDao;
+import com.ecaray.util.HbaseUtil;
+
+public class LogOperationDao extends DDLDao{
+	
+	private static final byte[] TABLE_NAME = Constant.OPERATION_LOG;
+	private static final String COL_FAMILY_NAME = "content";
+	private static final String COL_NAME = "log";
+
+	/**
+	 * 添加
+	 * @param logList
+	 * @return
+	 * @author YXD
+	 * @throws IOException 
+	 * @throws IllegalArgumentException 
+	 */
+	public Boolean add(List<LogInfo> logList) throws Exception{
+		Boolean isSuss = false ;
+		List<RowInfo> rowList = buildRowInfo(logList);
+		HConnection connection = ConnectPool.getInstance().getConnection();
+		HTableInterface rceTbl = connection.getTable(TableName.valueOf(TABLE_NAME));
+		//构建puts
+		List<Put> putList = buildPuts(rowList);
+		rceTbl.put(putList);
+		ConnectPool.getInstance().putConnection(connection);
+		isSuss = true;
+		return isSuss;
+	}
+	
+	/**
+	 * 删除
+	 * @param logList
+	 * @return
+	 * @author YXD
+	 * @throws IOException 
+	 * @throws IllegalArgumentException 
+	 */
+	public Boolean delete(List<LogInfo> logList) throws Exception{
+		Boolean isSuss = false ;
+		List<RowInfo> rowList = buildRowInfo(logList);
+		HConnection connection = ConnectPool.getInstance().getConnection();
+		HTableInterface rceTbl = connection.getTable(TableName.valueOf(TABLE_NAME));
+		//构建Deletes
+		List<Delete> deleteList = buildDelete(rowList);
+		rceTbl.delete(deleteList);
+		ConnectPool.getInstance().putConnection(connection);
+		isSuss = true;
+		return isSuss;
+	}
+	
+	/**
+	 * 查询
+	 * @param log
+	 * @return
+	 * @author YXD
+	 * @throws IOException 
+	 * @throws IllegalArgumentException 
+	 */
+	public List<LogInfo> query(LogInfo logInfo) throws Exception{
+		List<LogInfo> queryLogList = new ArrayList<LogInfo>();
+		List<LogInfo> logList = new ArrayList<LogInfo>();
+		logList.add(logInfo);
+		List<RowInfo> rowList = buildRowInfo(logList);
+		HConnection connection = ConnectPool.getInstance().getConnection();
+		HTableInterface rceTbl = connection.getTable(TableName.valueOf(TABLE_NAME));
+		//构建Deletes
+		List<Get> getList = buildGets(rowList);
+		Result[] results = rceTbl.get(getList);
+		List<JSONObject> jsonList = new ArrayList<JSONObject>();
+		for(Result result : results){
+			Cell[] cls = result.rawCells();
+			for(Cell cell : cls){
+				LogInfo querylogInfo = new LogInfo();
+				String rowkey = Bytes.toString(CellUtil.cloneRow(cell));
+				String[] splitArr = rowkey.split(Constant.SPLIT_UNDERLINE);
+				if(null != splitArr
+						&&2 == splitArr.length){
+					querylogInfo.setUid(splitArr[0]);
+					querylogInfo.setSystemId(splitArr[1]);
+				}
+				JSONObject jObj = new JSONObject();
+				String colName = Bytes.toString(CellUtil.cloneQualifier(cell));
+				jObj.put(Constant.COL_KEY, colName);
+				String value = Bytes.toString(CellUtil.cloneValue(cell));
+				jObj.put(Constant.COL_VALUE, new JSONObject(value));
+				jsonList.add(jObj);
+				querylogInfo.setJsonList(jsonList);
+				queryLogList.add(querylogInfo);
+			}
+		}
+		ConnectPool.getInstance().putConnection(connection);
+		return queryLogList;
+	}
+	
+	/**
+	 * 构建row列表信息
+	 * @param jObj
+	 * @return
+	 * @author YXD
+	 */
+	public List<RowInfo> buildRowInfo(List<LogInfo> logList){
+		List<RowInfo> rList = new ArrayList<RowInfo>();
+		for (int i = 0; i < logList.size(); i++) {
+			LogInfo logInfo = logList.get(i);
+			//构建rowkey
+			RowInfo rowInfo = new RowInfo();
+			rowInfo.setRowKey(HbaseUtil.buildRowkey(logInfo));
+			// 构建列
+			List<ColInfo> cList = new ArrayList<ColInfo>();
+			List<JSONObject> jsonList = logInfo.getJsonList();
+			for (int j = 0; null != jsonList && j < jsonList.size(); j++) {
+				JSONObject jobj = jsonList.get(j);
+				ColInfo cInfo = new ColInfo();
+				try {
+					cInfo.setColKey(jobj.getString(Constant.COL_KEY));
+					cInfo.setColVaue(jobj.getJSONObject(Constant.COL_VALUE).toString());
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				cList.add(cInfo);
+			}
+			
+			//构建列簇
+			List<ColFamilyInfo> cfList = new ArrayList<ColFamilyInfo>();
+			ColFamilyInfo cfInfo = new ColFamilyInfo();
+			cfInfo.setColFamilyName(COL_FAMILY_NAME);
+			cfInfo.setClList(cList);
+			cfList.add(cfInfo);
+			
+			rowInfo.setCfList(cfList);
+			
+			rList.add(rowInfo);
+		}
+		return rList;
+	}
+}
