@@ -2,6 +2,7 @@ package com.ecaray.hbase.dao.impl;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.hadoop.hbase.Cell;
@@ -13,19 +14,39 @@ import org.apache.hadoop.hbase.client.HConnection;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.filter.BinaryComparator;
+import org.apache.hadoop.hbase.filter.CompareFilter.CompareOp;
+import org.apache.hadoop.hbase.filter.Filter;
+import org.apache.hadoop.hbase.filter.FilterList;
+import org.apache.hadoop.hbase.filter.PrefixFilter;
+import org.apache.hadoop.hbase.filter.RowFilter;
+import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
+import org.apache.hadoop.hbase.filter.SubstringComparator;
 
 import com.ecaray.bean.ColFamilyInfo;
 import com.ecaray.bean.ColInfo;
+import com.ecaray.bean.LogCondition;
 import com.ecaray.bean.LogInfo;
 import com.ecaray.bean.RowInfo;
 import com.ecaray.connect.ConnectPool;
 import com.ecaray.constant.Constant;
 import com.ecaray.hbase.dao.DDLDao;
 import com.ecaray.util.HbaseUtil;
+import com.ecaray.util.StringUtil;
 
+/**
+ * 组合条件查询参考：
+ * https://www.cnblogs.com/linjiqin/archive/2013/06/05/3118921.html
+ * https://blog.csdn.net/vaq37942/article/details/54949428
+ * http://ygydaiaq-gmail-com.iteye.com/blog/1716844
+ * @author YXD
+ *
+ */
 public class LogOperationDao extends DDLDao{
 	
 	private static final byte[] TABLE_NAME = Constant.OPERATION_LOG;
@@ -118,6 +139,84 @@ public class LogOperationDao extends DDLDao{
 		return queryLogList;
 	}
 	
+	/**
+	 * 根据条件查询日志列表
+	 * @param logCondition
+	 * @return
+	 * @throws Exception
+	 * @author YXD
+	 */
+	public List<LogInfo> queryList(LogCondition logCondition) throws Exception{
+		List<LogInfo> logList = new ArrayList<LogInfo>();
+		HConnection connection = ConnectPool.getInstance().getConnection();
+		HTableInterface rceTbl = connection.getTable(TableName.valueOf(TABLE_NAME));
+		Scan scan=new Scan();
+        scan.setMaxVersions();
+        scan.setBatch(1000);
+        //时间过滤
+        if(!StringUtil.strIsEmpty(logCondition.getStartTime().toString())
+        		&& !StringUtil.strIsEmpty(logCondition.getEndTime().toString())){
+            scan.setTimeRange(logCondition.getStartTime(), logCondition.getEndTime());
+        }
+        //列过滤
+        List<String> columnList = logCondition.getColumnList();
+        if(null != columnList){
+        	for (Iterator iterator = columnList.iterator(); iterator.hasNext();) {
+				String columnName = (String) iterator.next();
+		        scan.addColumn(TABLE_NAME, Bytes.toBytes(columnName));
+			}
+        }
+        FilterList filterList=new FilterList(FilterList.Operator.MUST_PASS_ALL);
+        //组合条件
+        if(!StringUtil.strIsEmpty(logCondition.getUid())
+        		&& StringUtil.strIsEmpty(logCondition.getSystemId())){
+        	//如果只有uid
+        	PrefixFilter prefixFilter = new PrefixFilter(Bytes.toBytes(logCondition.getUid()));
+        	filterList.addFilter(prefixFilter);
+        }else if(StringUtil.strIsEmpty(logCondition.getUid())
+        		&& !StringUtil.strIsEmpty(logCondition.getSystemId())){
+        	//如果只有systemId
+        	RowFilter rowFilter = new RowFilter(CompareOp.EQUAL, new SubstringComparator(logCondition.getSystemId()));
+        	filterList.addFilter(rowFilter);
+        }else if(!StringUtil.strIsEmpty(logCondition.getUid())
+        		&& !StringUtil.strIsEmpty(logCondition.getSystemId())){
+        	//如果systemId和uid都存在
+        	RowFilter rowFilter = new RowFilter(CompareOp.EQUAL, new BinaryComparator(HbaseUtil.buildRowkey(logCondition)));
+        	filterList.addFilter(rowFilter);
+        }
+        scan.setFilter(filterList);
+        //最后分页
+        
+		List<JSONObject> jsonList = new ArrayList<JSONObject>();
+        ResultScanner resultScanner = rceTbl.getScanner(scan);
+		Iterator<Result> iter = resultScanner.iterator();
+		while(iter.hasNext()){
+			Result r = iter.next();
+			Cell[] cells = r.rawCells();
+			for(Cell cell : cells){
+				LogInfo querylogInfo = new LogInfo();
+				String rowkey = Bytes.toString(CellUtil.cloneRow(cell));
+				String[] splitArr = rowkey.split(Constant.SPLIT_UNDERLINE);
+				if(null != splitArr
+						&&2 == splitArr.length){
+					querylogInfo.setUid(splitArr[0]);
+					querylogInfo.setSystemId(splitArr[1]);
+				}
+				JSONObject jObj = new JSONObject();
+				String colName = Bytes.toString(CellUtil.cloneQualifier(cell));
+				jObj.put(Constant.COL_KEY, colName);
+				String value = Bytes.toString(CellUtil.cloneValue(cell));
+				jObj.put(Constant.COL_VALUE, new JSONObject(value));
+				jsonList.add(jObj);
+				querylogInfo.setJsonList(jsonList);
+				logList.add(querylogInfo);
+			}
+		}
+		ConnectPool.getInstance().putConnection(connection);
+		return logList;
+	}
+
+		
 	/**
 	 * 构建row列表信息
 	 * @param jObj

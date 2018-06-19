@@ -20,6 +20,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 import com.ecaray.bean.ColFamilyInfo;
 import com.ecaray.bean.ColInfo;
 import com.ecaray.bean.RowInfo;
+import com.ecaray.util.HbaseUtil;
 import com.ecaray.util.MD5;
 
 public class DDLDao {
@@ -46,7 +47,7 @@ public class DDLDao {
 					String key = cInfo.getColKey();
 					String value = cInfo.getColVaue();
 					Put put = new Put(Bytes.toBytes(rowKey));
-					put.add(Bytes.toBytes(cfName),Bytes.toBytes(key),Bytes.toBytes(value));
+					put.add(Bytes.toBytes(cfName),Bytes.toBytes(key),HbaseUtil.getSystemTime(),Bytes.toBytes(value));
 					puts.add(put);
 				}
 			}
