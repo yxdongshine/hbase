@@ -61,6 +61,7 @@ public class LogOperationDao extends DDLDao{
 	 * @throws IOException 
 	 * @throws IllegalArgumentException 
 	 */
+	@SuppressWarnings("deprecation")
 	public Boolean add(List<LogInfo> logList) throws Exception{
 		Boolean isSuss = false ;
 		List<RowInfo> rowList = buildRowInfo(logList);
@@ -68,6 +69,8 @@ public class LogOperationDao extends DDLDao{
 		HTableInterface rceTbl = connection.getTable(TableName.valueOf(TABLE_NAME));
 		//构建puts
 		List<Put> putList = buildPuts(rowList);
+		rceTbl.setAutoFlush(true);
+		rceTbl.flushCommits();
 		rceTbl.put(putList);
 		ConnectPool.getInstance().putConnection(connection);
 		isSuss = true;
@@ -87,6 +90,8 @@ public class LogOperationDao extends DDLDao{
 		List<RowInfo> rowList = buildRowInfo(logList);
 		HConnection connection = ConnectPool.getInstance().getConnection();
 		HTableInterface rceTbl = connection.getTable(TableName.valueOf(TABLE_NAME));
+		rceTbl.setAutoFlush(true);
+		rceTbl.flushCommits();
 		//构建Deletes
 		List<Delete> deleteList = buildDelete(rowList);
 		rceTbl.delete(deleteList);
@@ -113,7 +118,6 @@ public class LogOperationDao extends DDLDao{
 		//构建Deletes
 		List<Get> getList = buildGets(rowList);
 		Result[] results = rceTbl.get(getList);
-		List<JSONObject> jsonList = new ArrayList<JSONObject>();
 		for(Result result : results){
 			Cell[] cls = result.rawCells();
 			for(Cell cell : cls){
@@ -130,6 +134,8 @@ public class LogOperationDao extends DDLDao{
 				jObj.put(Constant.COL_KEY, colName);
 				String value = Bytes.toString(CellUtil.cloneValue(cell));
 				jObj.put(Constant.COL_VALUE, new JSONObject(value));
+				jObj.put(Constant.COL_TIME, cell.getTimestamp());
+				List<JSONObject> jsonList = new ArrayList<JSONObject>();
 				jsonList.add(jObj);
 				querylogInfo.setJsonList(jsonList);
 				queryLogList.add(querylogInfo);
@@ -150,13 +156,13 @@ public class LogOperationDao extends DDLDao{
 		List<LogInfo> logList = new ArrayList<LogInfo>();
 		HConnection connection = ConnectPool.getInstance().getConnection();
 		HTableInterface rceTbl = connection.getTable(TableName.valueOf(TABLE_NAME));
-		Scan scan=new Scan();
+		Scan scan = new Scan();
         scan.setMaxVersions();
-        scan.setBatch(1000);
+        scan.setBatch(10000);
         //时间过滤
-        if(!StringUtil.strIsEmpty(logCondition.getStartTime().toString())
-        		&& !StringUtil.strIsEmpty(logCondition.getEndTime().toString())){
-            scan.setTimeRange(logCondition.getStartTime(), logCondition.getEndTime());
+        if(!StringUtil.strIsEmpty(logCondition.getStartTime())
+        		&& !StringUtil.strIsEmpty(logCondition.getEndTime())){
+            scan.setTimeRange(Long.parseLong(logCondition.getStartTime()), Long.parseLong(logCondition.getEndTime()));
         }
         //列过滤
         List<String> columnList = logCondition.getColumnList();
@@ -187,7 +193,6 @@ public class LogOperationDao extends DDLDao{
         scan.setFilter(filterList);
         //最后分页
         
-		List<JSONObject> jsonList = new ArrayList<JSONObject>();
         ResultScanner resultScanner = rceTbl.getScanner(scan);
 		Iterator<Result> iter = resultScanner.iterator();
 		while(iter.hasNext()){
@@ -207,6 +212,8 @@ public class LogOperationDao extends DDLDao{
 				jObj.put(Constant.COL_KEY, colName);
 				String value = Bytes.toString(CellUtil.cloneValue(cell));
 				jObj.put(Constant.COL_VALUE, new JSONObject(value));
+				jObj.put(Constant.COL_TIME, cell.getTimestamp());
+				List<JSONObject> jsonList = new ArrayList<JSONObject>();
 				jsonList.add(jObj);
 				querylogInfo.setJsonList(jsonList);
 				logList.add(querylogInfo);

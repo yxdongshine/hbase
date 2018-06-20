@@ -16,5 +16,6 @@ public class Constant {
 	public static final String[] UIDS = {"100001011492509","100001236853379","100001642163054","100001845969440","100002357125081","100002362870154"};
 	public static final String COL_KEY = "col_key";
 	public static final String COL_VALUE = "col_value";
+	public static final String COL_TIME = "col_time";
 
 }

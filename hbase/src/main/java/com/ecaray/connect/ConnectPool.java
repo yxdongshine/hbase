@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.HConnection;
 import org.apache.hadoop.hbase.client.HConnectionManager;
 
@@ -16,15 +14,13 @@ import com.ecaray.constant.Constant;
  */
 public class ConnectPool {
 
-    private Logger log = Logger.getLogger(this.getClass().getName());
-
     //连接池个数
-    private int connectNum = 10;
+    private int connectNum = 1;
 
     private static ConnectPool connectPool = null;
   
     //线程池队列
-    ConcurrentLinkedQueue<HConnection> connectionQueue = new ConcurrentLinkedQueue<HConnection>();
+    private static ConcurrentLinkedQueue<HConnection> connectionQueue = new ConcurrentLinkedQueue<HConnection>();
 
     private ConnectPool(){}
 
@@ -56,7 +52,7 @@ public class ConnectPool {
      *从连接池中获取一个connetion
      * @return
      */
-    public  HConnection getConnection() {
+    public HConnection getConnection() {
     	HConnection connection = null;
         synchronized(connectionQueue){
             if (connectionQueue.size() < connectNum){
@@ -74,8 +70,15 @@ public class ConnectPool {
      * @return
      */
     public  void putConnection(HConnection connection) {
-        if (connectionQueue.size() < connectNum){
+        if (connectionQueue.size() <= connectNum){
             connectionQueue.offer(connection);
+        }else{
+        	try {
+				connection.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         }
     }
 

@@ -38,6 +38,7 @@ public class DDLDao {
 			//String rowKey = MD5.MD5Encode(row.getRowKey());
 			String rowKey = row.getRowKey();
 			List<ColFamilyInfo> cfList = row.getCfList();
+			long time = HbaseUtil.getSystemTime();
 			for (int i = 0; i < cfList.size(); i++) {
 				ColFamilyInfo cfInfo = cfList.get(i);
 				String cfName = cfInfo.getColFamilyName();
@@ -47,7 +48,7 @@ public class DDLDao {
 					String key = cInfo.getColKey();
 					String value = cInfo.getColVaue();
 					Put put = new Put(Bytes.toBytes(rowKey));
-					put.add(Bytes.toBytes(cfName),Bytes.toBytes(key),HbaseUtil.getSystemTime(),Bytes.toBytes(value));
+					put.add(Bytes.toBytes(cfName),Bytes.toBytes(key),time,Bytes.toBytes(value));
 					puts.add(put);
 				}
 			}
@@ -66,7 +67,8 @@ public class DDLDao {
 		for (int k = 0; k < rowList.size(); k++) {
 			RowInfo row = rowList.get(k);
 			//rowkey 采用md5 散裂化 分散regionserver压力
-			String rowKey = MD5.MD5Encode(row.getRowKey());
+			//String rowKey = MD5.MD5Encode(row.getRowKey());
+			String rowKey = row.getRowKey();
 			Delete delete = new Delete(Bytes.toBytes(rowKey));
 			List<ColFamilyInfo> cfList = row.getCfList();
 			for (int i = 0; i < cfList.size(); i++) {

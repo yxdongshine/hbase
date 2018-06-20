@@ -11,8 +11,8 @@ public class LogCondition {
 
 	private String uid;
 	private String systemId;
-	private Long startTime;
-	private Long endTime;
+	private String startTime;
+	private String endTime;
 	private List<String> columnList;//获取指定的列 为了提高查询效率 可不传
 	private int pageIndex = 1;//默认第一页
 	private int pageSize = 10;//默认每页10条
@@ -29,16 +29,17 @@ public class LogCondition {
 	public void setSystemId(String systemId) {
 		this.systemId = systemId;
 	}
-	public Long getStartTime() {
+	
+	public String getStartTime() {
 		return startTime;
 	}
-	public void setStartTime(Long startTime) {
+	public void setStartTime(String startTime) {
 		this.startTime = startTime;
 	}
-	public Long getEndTime() {
+	public String getEndTime() {
 		return endTime;
 	}
-	public void setEndTime(Long endTime) {
+	public void setEndTime(String endTime) {
 		this.endTime = endTime;
 	}
 	public int getPageIndex() {
