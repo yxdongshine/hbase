@@ -2,7 +2,7 @@ package com.ecaray.util;
 
 import org.apache.hadoop.hbase.util.Bytes;
 
-import com.ecaray.bean.LogCondition;
+import com.ecaray.bean.LogInfoPage;
 import com.ecaray.bean.LogInfo;
 import com.ecaray.constant.Constant;
 
@@ -12,7 +12,7 @@ public class HbaseUtil {
 		return logInfo.getUid().trim()+Constant.SPLIT_UNDERLINE+logInfo.getSystemId().trim();
 	}
 	
-	public static byte[] buildRowkey(LogCondition logCondition){
+	public static byte[] buildRowkey(LogInfoPage logCondition){
 		return Bytes.toBytes(logCondition.getUid().trim()+Constant.SPLIT_UNDERLINE+logCondition.getSystemId().trim());
 	}
 	

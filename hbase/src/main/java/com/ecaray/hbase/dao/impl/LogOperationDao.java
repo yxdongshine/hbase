@@ -23,6 +23,7 @@ import org.apache.hadoop.hbase.filter.BinaryComparator;
 import org.apache.hadoop.hbase.filter.CompareFilter.CompareOp;
 import org.apache.hadoop.hbase.filter.Filter;
 import org.apache.hadoop.hbase.filter.FilterList;
+import org.apache.hadoop.hbase.filter.PageFilter;
 import org.apache.hadoop.hbase.filter.PrefixFilter;
 import org.apache.hadoop.hbase.filter.RowFilter;
 import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
@@ -30,8 +31,9 @@ import org.apache.hadoop.hbase.filter.SubstringComparator;
 
 import com.ecaray.bean.ColFamilyInfo;
 import com.ecaray.bean.ColInfo;
-import com.ecaray.bean.LogCondition;
+import com.ecaray.bean.LogInfoPage;
 import com.ecaray.bean.LogInfo;
+import com.ecaray.bean.LogListPage;
 import com.ecaray.bean.RowInfo;
 import com.ecaray.connect.ConnectPool;
 import com.ecaray.constant.Constant;
@@ -108,10 +110,11 @@ public class LogOperationDao extends DDLDao{
 	 * @throws IOException 
 	 * @throws IllegalArgumentException 
 	 */
-	public List<LogInfo> query(LogInfo logInfo) throws Exception{
+	public LogListPage query(LogInfoPage logInfoPage) throws Exception{
+		LogListPage llPage = new LogListPage();
 		List<LogInfo> queryLogList = new ArrayList<LogInfo>();
 		List<LogInfo> logList = new ArrayList<LogInfo>();
-		logList.add(logInfo);
+		logList.add(logInfoPage);
 		List<RowInfo> rowList = buildRowInfo(logList);
 		HConnection connection = ConnectPool.getInstance().getConnection();
 		HTableInterface rceTbl = connection.getTable(TableName.valueOf(TABLE_NAME));
@@ -120,7 +123,19 @@ public class LogOperationDao extends DDLDao{
 		Result[] results = rceTbl.get(getList);
 		for(Result result : results){
 			Cell[] cls = result.rawCells();
+			int index = 0;
+			llPage.setTotalNum(cls.length);
 			for(Cell cell : cls){
+				if(logInfoPage.getIsPage()){//如果分页
+					index++;
+					int pageIndex = logInfoPage.getPageIndex();
+					int pageSize = logInfoPage.getPageSize();
+					if(index <= (pageIndex-1)*pageSize){
+						continue;
+					}else if(index > pageIndex*pageSize){
+						break;
+					}
+				}
 				LogInfo querylogInfo = new LogInfo();
 				String rowkey = Bytes.toString(CellUtil.cloneRow(cell));
 				String[] splitArr = rowkey.split(Constant.SPLIT_UNDERLINE);
@@ -142,7 +157,8 @@ public class LogOperationDao extends DDLDao{
 			}
 		}
 		ConnectPool.getInstance().putConnection(connection);
-		return queryLogList;
+		llPage.setLogList(queryLogList);
+		return llPage;
 	}
 	
 	/**
@@ -152,7 +168,8 @@ public class LogOperationDao extends DDLDao{
 	 * @throws Exception
 	 * @author YXD
 	 */
-	public List<LogInfo> queryList(LogCondition logCondition) throws Exception{
+	public LogListPage queryList(LogInfoPage logInfoPage) throws Exception{
+		LogListPage llPage = new LogListPage();
 		List<LogInfo> logList = new ArrayList<LogInfo>();
 		HConnection connection = ConnectPool.getInstance().getConnection();
 		HTableInterface rceTbl = connection.getTable(TableName.valueOf(TABLE_NAME));
@@ -160,45 +177,60 @@ public class LogOperationDao extends DDLDao{
         scan.setMaxVersions();
         scan.setBatch(10000);
         //时间过滤
-        if(!StringUtil.strIsEmpty(logCondition.getStartTime())
-        		&& !StringUtil.strIsEmpty(logCondition.getEndTime())){
-            scan.setTimeRange(Long.parseLong(logCondition.getStartTime()), Long.parseLong(logCondition.getEndTime()));
+        if(!StringUtil.strIsEmpty(logInfoPage.getStartTime())
+        		&& !StringUtil.strIsEmpty(logInfoPage.getEndTime())){
+            scan.setTimeRange(Long.parseLong(logInfoPage.getStartTime()), Long.parseLong(logInfoPage.getEndTime()));
         }
         //列过滤
-        List<String> columnList = logCondition.getColumnList();
+        List<String> columnList = logInfoPage.getColumnList();
         if(null != columnList){
         	for (Iterator iterator = columnList.iterator(); iterator.hasNext();) {
 				String columnName = (String) iterator.next();
 		        scan.addColumn(TABLE_NAME, Bytes.toBytes(columnName));
 			}
         }
-        FilterList filterList=new FilterList(FilterList.Operator.MUST_PASS_ALL);
+        FilterList filterList = new FilterList(FilterList.Operator.MUST_PASS_ALL);
+        /* //分页
+        PageFilter pageFilter = new PageFilter(1);
+        filterList.addFilter(pageFilter);
+        scan.setStartRow(Bytes.toBytes("100001011492509_20180528001948300381461684866578"));*/
         //组合条件
-        if(!StringUtil.strIsEmpty(logCondition.getUid())
-        		&& StringUtil.strIsEmpty(logCondition.getSystemId())){
+        if(!StringUtil.strIsEmpty(logInfoPage.getUid())
+        		&& StringUtil.strIsEmpty(logInfoPage.getSystemId())){
         	//如果只有uid
-        	PrefixFilter prefixFilter = new PrefixFilter(Bytes.toBytes(logCondition.getUid()));
+        	PrefixFilter prefixFilter = new PrefixFilter(Bytes.toBytes(logInfoPage.getUid()));
         	filterList.addFilter(prefixFilter);
-        }else if(StringUtil.strIsEmpty(logCondition.getUid())
-        		&& !StringUtil.strIsEmpty(logCondition.getSystemId())){
+        }else if(StringUtil.strIsEmpty(logInfoPage.getUid())
+        		&& !StringUtil.strIsEmpty(logInfoPage.getSystemId())){
         	//如果只有systemId
-        	RowFilter rowFilter = new RowFilter(CompareOp.EQUAL, new SubstringComparator(logCondition.getSystemId()));
+        	RowFilter rowFilter = new RowFilter(CompareOp.EQUAL, new SubstringComparator(logInfoPage.getSystemId()));
         	filterList.addFilter(rowFilter);
-        }else if(!StringUtil.strIsEmpty(logCondition.getUid())
-        		&& !StringUtil.strIsEmpty(logCondition.getSystemId())){
+        }else if(!StringUtil.strIsEmpty(logInfoPage.getUid())
+        		&& !StringUtil.strIsEmpty(logInfoPage.getSystemId())){
         	//如果systemId和uid都存在
-        	RowFilter rowFilter = new RowFilter(CompareOp.EQUAL, new BinaryComparator(HbaseUtil.buildRowkey(logCondition)));
+        	RowFilter rowFilter = new RowFilter(CompareOp.EQUAL, new BinaryComparator(HbaseUtil.buildRowkey(logInfoPage)));
         	filterList.addFilter(rowFilter);
         }
         scan.setFilter(filterList);
-        //最后分页
-        
+
         ResultScanner resultScanner = rceTbl.getScanner(scan);
 		Iterator<Result> iter = resultScanner.iterator();
 		while(iter.hasNext()){
 			Result r = iter.next();
 			Cell[] cells = r.rawCells();
+			int index = 0;
+			llPage.setTotalNum(cells.length);
 			for(Cell cell : cells){
+				if(logInfoPage.getIsPage()){//如果分页
+					index++;
+					int pageIndex = logInfoPage.getPageIndex();
+					int pageSize = logInfoPage.getPageSize();
+					if(index <= (pageIndex-1)*pageSize){
+						continue;
+					}else if(index > pageIndex*pageSize){
+						break;
+					}
+				}
 				LogInfo querylogInfo = new LogInfo();
 				String rowkey = Bytes.toString(CellUtil.cloneRow(cell));
 				String[] splitArr = rowkey.split(Constant.SPLIT_UNDERLINE);
@@ -220,7 +252,8 @@ public class LogOperationDao extends DDLDao{
 			}
 		}
 		ConnectPool.getInstance().putConnection(connection);
-		return logList;
+		llPage.setLogList(logList);
+		return llPage;
 	}
 
 		

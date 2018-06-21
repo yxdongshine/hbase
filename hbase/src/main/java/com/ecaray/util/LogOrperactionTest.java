@@ -5,8 +5,9 @@ import java.util.List;
 
 import org.codehaus.jettison.json.JSONObject;
 
-import com.ecaray.bean.LogCondition;
+import com.ecaray.bean.LogInfoPage;
 import com.ecaray.bean.LogInfo;
+import com.ecaray.bean.LogListPage;
 import com.ecaray.constant.Constant;
 import com.ecaray.hbase.dao.impl.LogOperationDao;
 
@@ -22,12 +23,16 @@ public class LogOrperactionTest {
 		logInfo.setSystemId("20180528001948300381461684866578");
 		List<LogInfo> logInfoList = loDao.query(logInfo);*/
 		//列表查询
-		LogCondition logCondition = new LogCondition();
+		LogInfoPage logCondition = new LogInfoPage();
 		logCondition.setUid("100001011492509");
 		logCondition.setSystemId("20180528001948300381461684866578");
 		logCondition.setStartTime("1529483100000");
 		logCondition.setEndTime("1529483460000");
-		List<LogInfo> logInfoList = loDao.queryList(logCondition);
+		logCondition.setIsPage(true);//分页
+		logCondition.setPageIndex(1);
+		logCondition.setPageSize(10); 
+		LogListPage llPage = loDao.queryList(logCondition);
+		List<LogInfo> logInfoList = llPage.getLogList();
 		for (int i = 0; i < logInfoList.size(); i++) {
 			LogInfo logInfo2 = logInfoList.get(i);
 			String str = logInfo2.getUid()+"_"+logInfo2.getSystemId()+" ";

@@ -7,29 +7,15 @@ import java.util.List;
  * @author YXD
  *
  */
-public class LogCondition {
+public class LogInfoPage extends LogInfo{
 
-	private String uid;
-	private String systemId;
 	private String startTime;
 	private String endTime;
 	private List<String> columnList;//获取指定的列 为了提高查询效率 可不传
 	private int pageIndex = 1;//默认第一页
-	private int pageSize = 10;//默认每页10条
-	
-	public String getUid() {
-		return uid;
-	}
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-	public String getSystemId() {
-		return systemId;
-	}
-	public void setSystemId(String systemId) {
-		this.systemId = systemId;
-	}
-	
+	private int pageSize = 50;//默认每页10条
+	private Boolean isPage = false ;// 默认不分页
+
 	public String getStartTime() {
 		return startTime;
 	}
@@ -60,6 +46,11 @@ public class LogCondition {
 	public void setColumnList(List<String> columnList) {
 		this.columnList = columnList;
 	}
-	
+	public Boolean getIsPage() {
+		return isPage;
+	}
+	public void setIsPage(Boolean isPage) {
+		this.isPage = isPage;
+	}
 	
 }

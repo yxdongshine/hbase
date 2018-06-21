@@ -474,7 +474,7 @@ public class Weibo {
 	} 
 	
 	public static void main(String[] args) {
-		Weibo wb = new  Weibo();
+		/*Weibo wb = new  Weibo();
 		wb.initNameSpace();
 		wb.initTable();
 		//wb.pubishWeiboContent("0001", "今天天气真不错！");
@@ -493,8 +493,8 @@ public class Weibo {
 		
 		for(int i=0;i < 1000 ;i++){
 			wb.pubishWeiboContent(String.format("%04d", i), "今天天气真不错！" + i);
-		}
-		
+		}*/
+		System.out.println(Integer.MAX_VALUE);
 		
 	}
 
