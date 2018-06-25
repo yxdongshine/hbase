@@ -35,6 +35,7 @@ import com.ecaray.bean.RowInfo;
 import com.ecaray.connect.ConnectPool;
 import com.ecaray.constant.Constant;
 import com.ecaray.hbase.dao.DDLDao;
+import com.ecaray.log.Logging;
 import com.ecaray.util.HbaseUtil;
 import com.ecaray.util.StringUtil;
 
@@ -48,10 +49,11 @@ import com.ecaray.util.StringUtil;
  */
 public class LogOperationDao extends DDLDao{
 	
+	private static Logging log = Logging.getLogging(LogOperationDao.class.getName());
 	private static final byte[] TABLE_NAME = Constant.OPERATION_LOG;
 	private static final String COL_FAMILY_NAME = "content";
 	private static final String COL_NAME = "log";
-
+	
 	/**
 	 * 添加
 	 * @param logList
@@ -71,7 +73,7 @@ public class LogOperationDao extends DDLDao{
 		//rceTbl.flushCommits();
 		long beforeTime = HbaseUtil.getSystemTime();
 		rceTbl.put(putList);
-		System.out.println("写入时间差："+ (HbaseUtil.getSystemTime() - beforeTime));
+		System.out.println("写入时间差(毫秒)："+ (HbaseUtil.getSystemTime() - beforeTime));
 		ConnectPool.getInstance().putConnection(connection);
 		isSuss = true;
 		return isSuss;
@@ -211,8 +213,10 @@ public class LogOperationDao extends DDLDao{
         }
         scan.setFilter(filterList);
 
+        long beforeTime = HbaseUtil.getSystemTime();
         ResultScanner resultScanner = rceTbl.getScanner(scan);
 		Iterator<Result> iter = resultScanner.iterator();
+		System.out.println("查询时间差(毫秒)："+ (HbaseUtil.getSystemTime() - beforeTime - 100));
 		while(iter.hasNext()){
 			Result r = iter.next();
 			Cell[] cells = r.rawCells();

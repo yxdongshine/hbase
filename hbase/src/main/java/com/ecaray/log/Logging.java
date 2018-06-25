@@ -1,16 +1,7 @@
-/*package com.ecaray.util;
+package com.ecaray.log;
 
 import java.util.Hashtable;
-
 import org.apache.log4j.Logger;
-
-import com.base.log.LogClient;
-import com.base.log.Logging;
-import com.base.log.ReqUtils;
-import com.base.service.LogServerService;
-import com.base.utils.ParaMap;
-import com.base.utils.StrUtils;
-import com.base.web.AppConfig;
 
 public class Logging {
 	private Logger logger;
@@ -52,9 +43,7 @@ public class Logging {
 	}
 
 	private void internal(String paramString1, String paramString2) {
-		String str = AppConfig.getStringPro("logType");
-		if (StrUtils.isNull(str))
-			str = "log4j";
+		String str = "log4j";
 		StackTraceElement[] arrayOfStackTraceElement = Thread.currentThread()
 				.getStackTrace();
 		ParaMap localParaMap = new ParaMap();
@@ -89,4 +78,3 @@ public class Logging {
 		Thread.sleep(2147483647L);
 	}
 }
-*/

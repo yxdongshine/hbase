@@ -1,7 +1,6 @@
 package com.ecaray.bean;
 
 import java.util.List;
-
 import org.codehaus.jettison.json.JSONObject;
 
 public class LogInfo {

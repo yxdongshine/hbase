@@ -5,17 +5,21 @@ import java.util.List;
 import java.util.Random;
 
 import org.codehaus.jettison.json.JSONObject;
+
 import com.ecaray.bean.LogInfoPage;
 import com.ecaray.bean.LogInfo;
 import com.ecaray.bean.LogListPage;
 import com.ecaray.constant.Constant;
 import com.ecaray.hbase.dao.impl.LogOperationDao;
+import com.ecaray.log.Logging;
 
 public class LogOrperactionTest {
-
+	
+	private static Logging log = Logging.getLogging(LogOrperactionTest.class.getName());
 	public static void main(String[] args) throws Exception {
 		// TODO Auto-generated method stub
 		bigDataTest();
+		//queryList();
 	}
 	
 	
@@ -64,12 +68,12 @@ public class LogOrperactionTest {
 		LogOperationDao loDao = new LogOperationDao();
 		//列表查询
 		LogInfoPage logCondition = new LogInfoPage();
-		logCondition.setUid("100001011492509");
-		logCondition.setSystemId("20180528001948300381461684866578");
-		logCondition.setStartTime("1529483100000");
-		logCondition.setEndTime("1529483460000");
+		logCondition.setUid("81387069989104259341208152608102");
+		logCondition.setSystemId("55424692910001");
+		logCondition.setStartTime("1529856000000");
+		logCondition.setEndTime("1529938800000");
 		logCondition.setIsPage(true);//分页
-		logCondition.setPageIndex(1);
+		logCondition.setPageIndex(100);
 		logCondition.setPageSize(10); 
 		LogListPage llPage = loDao.queryList(logCondition);
 		List<LogInfo> logInfoList = llPage.getLogList();
@@ -104,7 +108,6 @@ public class LogOrperactionTest {
 			LogInfo logInfo = new LogInfo();
 			logInfo.setUid("100001011492509");
 			logInfo.setSystemId("20180528001948300381461684866578");
-			
 			List<JSONObject> jsonList = new ArrayList<JSONObject>();
 			JSONObject obj = new JSONObject();
 			obj.put(Constant.COL_KEY, "login");
@@ -125,15 +128,16 @@ public class LogOrperactionTest {
 	public static void bigDataTest() throws Exception{
 		LogOperationDao loDao = new LogOperationDao();
 		Random random = new Random();
-		for (int K = 0; K < 1000; K++) {
+		for (int K = 0; K < 1000 ; K++) {
 			List<LogInfo> logList = new ArrayList<LogInfo>();
+			LogInfo logInfo = new LogInfo();
+			String uid = new StringBuilder(IDGenerator.newGUID()).reverse().toString();
+			logInfo.setUid(uid);
+			String reSystemId = new StringBuilder("100019296424" + random.nextInt(100)).reverse().toString();
+			logInfo.setSystemId(reSystemId);
+			log.info("第"+ K +"次 uid: "+uid+" systemid:"+reSystemId);
+			List<JSONObject> jsonList = new ArrayList<JSONObject>();
 			for (int i = 0; i < 1000; i++) {
-				LogInfo logInfo = new LogInfo();
-				logInfo.setUid(new StringBuilder(IDGenerator.newGUID()).reverse().toString());
-				String systemId = "100019296424" + random.nextInt(100);
-				logInfo.setSystemId(new StringBuilder(systemId).reverse().toString());
-				
-				List<JSONObject> jsonList = new ArrayList<JSONObject>();
 				JSONObject obj = new JSONObject();
 				obj.put(Constant.COL_KEY, "login");
 				JSONObject obj1 = new JSONObject();
@@ -142,12 +146,9 @@ public class LogOrperactionTest {
 				obj1.put("oper3", "zhnagxang view ad "+i);
 				obj.put(Constant.COL_VALUE, obj1);
 				jsonList.add(obj);
-				
-				logInfo.setJsonList(jsonList);
-	
-				logList.add(logInfo);
-				
 			}
+			logInfo.setJsonList(jsonList);
+			logList.add(logInfo);
 			loDao.add(logList);
 		}
 		
