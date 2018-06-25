@@ -21,12 +21,9 @@ import org.codehaus.jettison.json.JSONObject;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.BinaryComparator;
 import org.apache.hadoop.hbase.filter.CompareFilter.CompareOp;
-import org.apache.hadoop.hbase.filter.Filter;
 import org.apache.hadoop.hbase.filter.FilterList;
-import org.apache.hadoop.hbase.filter.PageFilter;
 import org.apache.hadoop.hbase.filter.PrefixFilter;
 import org.apache.hadoop.hbase.filter.RowFilter;
-import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
 import org.apache.hadoop.hbase.filter.SubstringComparator;
 
 import com.ecaray.bean.ColFamilyInfo;
@@ -63,7 +60,6 @@ public class LogOperationDao extends DDLDao{
 	 * @throws IOException 
 	 * @throws IllegalArgumentException 
 	 */
-	@SuppressWarnings("deprecation")
 	public Boolean add(List<LogInfo> logList) throws Exception{
 		Boolean isSuss = false ;
 		List<RowInfo> rowList = buildRowInfo(logList);
@@ -71,9 +67,11 @@ public class LogOperationDao extends DDLDao{
 		HTableInterface rceTbl = connection.getTable(TableName.valueOf(TABLE_NAME));
 		//构建puts
 		List<Put> putList = buildPuts(rowList);
-		rceTbl.setAutoFlush(true);
-		rceTbl.flushCommits();
+		//rceTbl.setAutoFlush(true);
+		//rceTbl.flushCommits();
+		long beforeTime = HbaseUtil.getSystemTime();
 		rceTbl.put(putList);
+		System.out.println("写入时间差："+ (HbaseUtil.getSystemTime() - beforeTime));
 		ConnectPool.getInstance().putConnection(connection);
 		isSuss = true;
 		return isSuss;
@@ -92,8 +90,8 @@ public class LogOperationDao extends DDLDao{
 		List<RowInfo> rowList = buildRowInfo(logList);
 		HConnection connection = ConnectPool.getInstance().getConnection();
 		HTableInterface rceTbl = connection.getTable(TableName.valueOf(TABLE_NAME));
-		rceTbl.setAutoFlush(true);
-		rceTbl.flushCommits();
+		//rceTbl.setAutoFlush(true);
+		//rceTbl.flushCommits();
 		//构建Deletes
 		List<Delete> deleteList = buildDelete(rowList);
 		rceTbl.delete(deleteList);
