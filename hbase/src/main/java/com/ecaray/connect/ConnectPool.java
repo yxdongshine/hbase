@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 
 import org.apache.hadoop.hbase.client.HConnection;
 import org.apache.hadoop.hbase.client.HConnectionManager;
+import org.apache.hadoop.hdfs.server.namenode.status_jsp;
 
 import com.ecaray.constant.Constant;
 
@@ -80,6 +81,22 @@ public class ConnectPool {
 				e.printStackTrace();
 			}
         }
+    }
+
+    /**
+     * 关闭所有连接资源
+     * @author YXD
+     */
+    public void closeAllConnection() {
+    	for (int i = 0; i < connectionQueue.size(); i++) {
+    		HConnection connection = connectionQueue.poll();
+    		try {
+    			connection.close();
+    		} catch (IOException e) {
+    			// TODO Auto-generated catch block
+    			e.printStackTrace();
+    		}
+		}
     }
 
 }

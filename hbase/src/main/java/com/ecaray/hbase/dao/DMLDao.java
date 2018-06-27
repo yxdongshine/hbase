@@ -1,7 +1,10 @@
 package com.ecaray.hbase.dao;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.TreeSet;
 
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
@@ -9,6 +12,7 @@ import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
 import org.apache.hadoop.hbase.util.Bytes;
+
 import com.ecaray.connect.HbaseAdminConnect;
 import com.ecaray.constant.Constant;
 
@@ -27,7 +31,7 @@ public class DMLDao {
 	 */
 	public void createTable(String tableName,List<String> familyCol){
 		byte[] tableNameBytes = null;
-		List<byte[]> familyColBytes = null;
+		List<byte[]> familyColBytes = new ArrayList<byte[]>();
 		if(null == tableName 
 				|| "".equals(tableName.trim())) tableNameBytes = Constant.OPERATION_LOG;
 		else tableNameBytes = Bytes.toBytes(Constant.NAMESPACE+Constant.SPLIT_COLON+tableName);
@@ -60,7 +64,7 @@ public class DMLDao {
 				family.setInMemory(true);//优先存储这个列簇
 				desc.addFamily(family);
 			}
-			HbaseAdminConnect.getHbaseAdminConnectInstance().createTable(desc);
+			HbaseAdminConnect.getHbaseAdminConnectInstance().createTable(desc,getSplitKeys());
 		} catch (MasterNotRunningException e) {
 			e.printStackTrace();
 		} catch (ZooKeeperConnectionException e) {
@@ -72,6 +76,24 @@ public class DMLDao {
 		}
 	}
 	
+	private byte[][] getSplitKeys() {  
+        String[] keys = new String[] { "0|","1|", "2|", "3|", "4|", "5|",  
+                "6|", "7|", "8|", "9|" };  
+        byte[][] splitKeys = new byte[keys.length][];  
+        TreeSet<byte[]> rows = new TreeSet<byte[]>(Bytes.BYTES_COMPARATOR);//升序排序  
+        for (int i = 0; i < keys.length; i++) {  
+            rows.add(Bytes.toBytes(keys[i]));  
+        }  
+        Iterator<byte[]> rowKeyIter = rows.iterator();  
+        int i = 0;  
+        while (rowKeyIter.hasNext()) {  
+            byte[] tempRow = rowKeyIter.next();  
+            rowKeyIter.remove();  
+            splitKeys[i] = tempRow;  
+            i++;  
+        }  
+        return splitKeys;  
+	}   
 	
 	/**
 	 * 删除表
@@ -96,4 +118,9 @@ public class DMLDao {
 		}
 	}
 
+	public static void main(String[] args) {
+		//创建日志表
+		DMLDao dmlDao = new DMLDao();
+		dmlDao.createTable(null, null);
+	}
 }

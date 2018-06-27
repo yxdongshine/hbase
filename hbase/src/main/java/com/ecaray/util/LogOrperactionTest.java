@@ -9,6 +9,7 @@ import org.codehaus.jettison.json.JSONObject;
 import com.ecaray.bean.LogInfoPage;
 import com.ecaray.bean.LogInfo;
 import com.ecaray.bean.LogListPage;
+import com.ecaray.connect.ConnectPool;
 import com.ecaray.constant.Constant;
 import com.ecaray.executors.ThreadPool;
 import com.ecaray.hbase.dao.impl.LogOperationDao;
@@ -20,8 +21,10 @@ public class LogOrperactionTest {
 	public static Logging log = Logging.getLogging(LogOrperactionTest.class.getName());
 	public static void main(String[] args) throws Exception {
 		// TODO Auto-generated method stub
-		//bigDataTest();
-		queryList();
+		bigDataTest();
+		//queryList();
+		//关闭所有资源
+		ConnectPool.getInstance().closeAllConnection();
 	}
 	
 	
