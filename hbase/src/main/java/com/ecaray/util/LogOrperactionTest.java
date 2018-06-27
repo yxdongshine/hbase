@@ -10,16 +10,18 @@ import com.ecaray.bean.LogInfoPage;
 import com.ecaray.bean.LogInfo;
 import com.ecaray.bean.LogListPage;
 import com.ecaray.constant.Constant;
+import com.ecaray.executors.ThreadPool;
 import com.ecaray.hbase.dao.impl.LogOperationDao;
 import com.ecaray.log.Logging;
+import com.ecaray.task.PutDataTask;
 
 public class LogOrperactionTest {
 	
-	private static Logging log = Logging.getLogging(LogOrperactionTest.class.getName());
+	public static Logging log = Logging.getLogging(LogOrperactionTest.class.getName());
 	public static void main(String[] args) throws Exception {
 		// TODO Auto-generated method stub
-		bigDataTest();
-		//queryList();
+		//bigDataTest();
+		queryList();
 	}
 	
 	
@@ -68,12 +70,12 @@ public class LogOrperactionTest {
 		LogOperationDao loDao = new LogOperationDao();
 		//列表查询
 		LogInfoPage logCondition = new LogInfoPage();
-		logCondition.setUid("81387069989104259341208152608102");
-		logCondition.setSystemId("55424692910001");
-		logCondition.setStartTime("1529856000000");
-		logCondition.setEndTime("1529938800000");
+		logCondition.setUid("97928325887048143075951262608102");
+		logCondition.setSystemId("13424692910001");
+		//logCondition.setStartTime("1529856000000");
+		//logCondition.setEndTime("1529938800000");
 		logCondition.setIsPage(true);//分页
-		logCondition.setPageIndex(100);
+		logCondition.setPageIndex(50);
 		logCondition.setPageSize(10); 
 		LogListPage llPage = loDao.queryList(logCondition);
 		List<LogInfo> logInfoList = llPage.getLogList();
@@ -152,5 +154,21 @@ public class LogOrperactionTest {
 			loDao.add(logList);
 		}
 		
+	}
+	
+	
+	public static void multThreadBigDataTest(int start) throws Exception{
+		for (int i = 1; i <= 2; i++) {
+			PutDataTask pdTask = new PutDataTask();
+			pdTask.setNum(10);
+			int indexEnd = 1000000/10 * i;
+			if(1 == i){
+				pdTask.setIndexStart(1001);
+			}else{
+				pdTask.setIndexStart(indexEnd+1-1000000/10);
+			}
+			pdTask.setIndexEnd(indexEnd);
+			ThreadPool.getInstance().addTask(pdTask);
+		}
 	}
 }
