@@ -21,10 +21,11 @@ public class LogOrperactionTest {
 	public static Logging log = Logging.getLogging(LogOrperactionTest.class.getName());
 	public static void main(String[] args) throws Exception {
 		// TODO Auto-generated method stub
-		bigDataTest();
+		//bigDataTest();
+		multThreadBigDataTest(1000);
 		//queryList();
 		//关闭所有资源
-		ConnectPool.getInstance().closeAllConnection();
+		//ConnectPool.getInstance().closeAllConnection();
 	}
 	
 	
@@ -73,8 +74,8 @@ public class LogOrperactionTest {
 		LogOperationDao loDao = new LogOperationDao();
 		//列表查询
 		LogInfoPage logCondition = new LogInfoPage();
-		logCondition.setUid("97928325887048143075951262608102");
-		logCondition.setSystemId("13424692910001");
+		logCondition.setUid("68622373224185475731724082608102");
+		logCondition.setSystemId("34424692910001");
 		//logCondition.setStartTime("1529856000000");
 		//logCondition.setEndTime("1529938800000");
 		logCondition.setIsPage(true);//分页
@@ -166,9 +167,9 @@ public class LogOrperactionTest {
 			pdTask.setNum(10);
 			int indexEnd = 1000000/10 * i;
 			if(1 == i){
-				pdTask.setIndexStart(1001);
+				pdTask.setIndexStart(start);
 			}else{
-				pdTask.setIndexStart(indexEnd+1-1000000/10);
+				pdTask.setIndexStart(indexEnd - 1000000/10);
 			}
 			pdTask.setIndexEnd(indexEnd);
 			ThreadPool.getInstance().addTask(pdTask);

@@ -25,6 +25,7 @@ import org.apache.hadoop.hbase.filter.FilterList;
 import org.apache.hadoop.hbase.filter.PrefixFilter;
 import org.apache.hadoop.hbase.filter.RowFilter;
 import org.apache.hadoop.hbase.filter.SubstringComparator;
+import org.apache.hadoop.hbase.filter.TimestampsFilter;
 
 import com.ecaray.bean.ColFamilyInfo;
 import com.ecaray.bean.ColInfo;
