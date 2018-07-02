@@ -22,7 +22,7 @@ public class LogOrperactionTest {
 	public static void main(String[] args) throws Exception {
 		// TODO Auto-generated method stub
 		//bigDataTest();
-		multThreadBigDataTest(1000);
+		multThreadBigDataTest(10*10000);
 		//queryList();
 		//关闭所有资源
 		//ConnectPool.getInstance().closeAllConnection();
@@ -74,13 +74,13 @@ public class LogOrperactionTest {
 		LogOperationDao loDao = new LogOperationDao();
 		//列表查询
 		LogInfoPage logCondition = new LogInfoPage();
-		logCondition.setUid("68622373224185475731724082608102");
-		logCondition.setSystemId("34424692910001");
+		//logCondition.setUid("27309697350484412024953292608102");
+		logCondition.setSystemId("2424692910001");
 		//logCondition.setStartTime("1529856000000");
 		//logCondition.setEndTime("1529938800000");
 		logCondition.setIsPage(true);//分页
-		logCondition.setPageIndex(50);
-		logCondition.setPageSize(10); 
+		logCondition.setPageIndex(1);
+		logCondition.setPageSize(10000); 
 		LogListPage llPage = loDao.queryList(logCondition);
 		List<LogInfo> logInfoList = llPage.getLogList();
 		for (int i = 0; i < logInfoList.size(); i++) {
@@ -162,14 +162,14 @@ public class LogOrperactionTest {
 	
 	
 	public static void multThreadBigDataTest(int start) throws Exception{
-		for (int i = 1; i <= 2; i++) {
+		for (int i = 1; i <= 4; i++) {
 			PutDataTask pdTask = new PutDataTask();
-			pdTask.setNum(10);
-			int indexEnd = 1000000/10 * i;
+			pdTask.setNum(10 * 10000);
+			int indexEnd = 10 * i + start;
 			if(1 == i){
 				pdTask.setIndexStart(start);
 			}else{
-				pdTask.setIndexStart(indexEnd - 1000000/10);
+				pdTask.setIndexStart(indexEnd - 10 );
 			}
 			pdTask.setIndexEnd(indexEnd);
 			ThreadPool.getInstance().addTask(pdTask);
