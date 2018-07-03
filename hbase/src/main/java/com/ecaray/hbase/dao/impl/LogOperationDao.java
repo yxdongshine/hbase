@@ -176,7 +176,7 @@ public class LogOperationDao extends DDLDao{
 		HTableInterface rceTbl = connection.getTable(TableName.valueOf(TABLE_NAME));
 		Scan scan = new Scan();
         scan.setMaxVersions();
-        scan.setBatch(10000);
+        scan.setBatch(100000);//单用户使用十年最大数据10w
         //时间过滤
         if(!StringUtil.strIsEmpty(logInfoPage.getStartTime())
         		&& !StringUtil.strIsEmpty(logInfoPage.getEndTime())){

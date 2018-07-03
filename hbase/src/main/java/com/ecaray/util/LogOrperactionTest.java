@@ -22,8 +22,8 @@ public class LogOrperactionTest {
 	public static void main(String[] args) throws Exception {
 		// TODO Auto-generated method stub
 		//bigDataTest();
-		multThreadBigDataTest(10*10000);
-		//queryList();
+		//multThreadBigDataTest(10*10000);
+		queryList();
 		//关闭所有资源
 		//ConnectPool.getInstance().closeAllConnection();
 	}
@@ -74,13 +74,13 @@ public class LogOrperactionTest {
 		LogOperationDao loDao = new LogOperationDao();
 		//列表查询
 		LogInfoPage logCondition = new LogInfoPage();
-		//logCondition.setUid("27309697350484412024953292608102");
-		logCondition.setSystemId("2424692910001");
+		logCondition.setUid("79632379789479639395435120708102");
+		logCondition.setSystemId("15424692910001");
 		//logCondition.setStartTime("1529856000000");
 		//logCondition.setEndTime("1529938800000");
 		logCondition.setIsPage(true);//分页
-		logCondition.setPageIndex(1);
-		logCondition.setPageSize(10000); 
+		logCondition.setPageIndex(7000);
+		logCondition.setPageSize(10); 
 		LogListPage llPage = loDao.queryList(logCondition);
 		List<LogInfo> logInfoList = llPage.getLogList();
 		for (int i = 0; i < logInfoList.size(); i++) {
