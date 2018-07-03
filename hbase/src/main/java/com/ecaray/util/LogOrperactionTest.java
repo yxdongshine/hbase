@@ -16,14 +16,23 @@ import com.ecaray.hbase.dao.impl.LogOperationDao;
 import com.ecaray.log.Logging;
 import com.ecaray.task.PutDataTask;
 
+/**
+ * TODO
+ * 	1.hbase.hregion.max.filesize 拆分 默认10G；最好增加定时器手动指定时间拆分
+ * 	2.hbase.hregion.majorcompaction 默认1天合并一次；多个小文件合并，最好手动指定合并
+ * 	以上两点默认自动开启，但是会堵塞请求
+ *  3.
+ * @author YXD
+ *
+ */
 public class LogOrperactionTest {
 	
 	public static Logging log = Logging.getLogging(LogOrperactionTest.class.getName());
 	public static void main(String[] args) throws Exception {
 		// TODO Auto-generated method stub
 		//bigDataTest();
-		//multThreadBigDataTest(10*10000);
-		queryList();
+		multThreadBigDataTest(400*10000);
+		//queryList();
 		//关闭所有资源
 		//ConnectPool.getInstance().closeAllConnection();
 	}
@@ -74,12 +83,12 @@ public class LogOrperactionTest {
 		LogOperationDao loDao = new LogOperationDao();
 		//列表查询
 		LogInfoPage logCondition = new LogInfoPage();
-		logCondition.setUid("79632379789479639395435120708102");
-		logCondition.setSystemId("15424692910001");
+		logCondition.setUid("49332315090713133731553030708102");
+		logCondition.setSystemId("16424692910001");
 		//logCondition.setStartTime("1529856000000");
 		//logCondition.setEndTime("1529938800000");
 		logCondition.setIsPage(true);//分页
-		logCondition.setPageIndex(7000);
+		logCondition.setPageIndex(1);
 		logCondition.setPageSize(10); 
 		LogListPage llPage = loDao.queryList(logCondition);
 		List<LogInfo> logInfoList = llPage.getLogList();
@@ -164,12 +173,12 @@ public class LogOrperactionTest {
 	public static void multThreadBigDataTest(int start) throws Exception{
 		for (int i = 1; i <= 4; i++) {
 			PutDataTask pdTask = new PutDataTask();
-			pdTask.setNum(10 * 10000);
-			int indexEnd = 10 * i + start;
+			pdTask.setNum(1);
+			int indexEnd = 250000 * i + start;
 			if(1 == i){
 				pdTask.setIndexStart(start);
 			}else{
-				pdTask.setIndexStart(indexEnd - 10 );
+				pdTask.setIndexStart(indexEnd - 250000 );
 			}
 			pdTask.setIndexEnd(indexEnd);
 			ThreadPool.getInstance().addTask(pdTask);

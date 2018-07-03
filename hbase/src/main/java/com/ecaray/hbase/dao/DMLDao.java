@@ -55,7 +55,7 @@ public class DMLDao {
 			for (int i = 0; i < familyColBytes.size(); i++) {
 				HColumnDescriptor family = new HColumnDescriptor(familyColBytes.get(i));
 				// 开启列簇 -- store的块缓存
-				//family.setBlockCacheEnabled(true);
+				family.setBlockCacheEnabled(true);
 				//family.setBlocksize(1024*1024*2);
 				
 				family.setMaxVersions(Integer.MAX_VALUE);
